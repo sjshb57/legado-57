@@ -107,14 +107,19 @@
    * config.convertZeroToPreface = false;
    * config.defaultSuffix = '篇';
    * // 结果示例：'第壹佰贰拾叁内容。' → '第123篇内容。'
-   */
+  
   const config = {
+  
     removePunctuation: true,    // 是否移除末尾标点
+
     autoAddSpace: true,         // 是否自动添加空格
+    
     convertZeroToPreface: false, // 是否将零转换为序
+    
     maxCacheSize: 100,          // 最大缓存条目数
+    
     defaultSuffix: '章'         // 无标识符时的默认后缀
-  };
+  }
 
 ###  // ==== 3. 正则表达式系统 ====
    * 正则表达式缓存系统：
