@@ -76,42 +76,43 @@
    *   示例: '第一百标题' → '第100章 标题'
    * 
    * 配置示例：
-   * // 保留所有标点并不自动添加空格
-   * config.removePunctuation = false;
-   * config.autoAddSpace = false;
-   * // 结果示例：'第1章内容。' → '第1章内容。'
-   * 
-   * // 启用零值转换
-   * config.convertZeroToPreface = true;
-   * // 结果示例：'第零章' → '序章'
-   * 
-   * // 自定义配置组合1
-   * config.removePunctuation = true;
-   * config.autoAddSpace = false;
-   * // 结果示例：'第1章内容！' → '第1章内容'
-   * 
-   * // 自定义配置组合2
-   * config.removePunctuation = false;
-   * config.autoAddSpace = true;
-   * // 结果示例：'第1章内容。' → '第1章 内容。'
-   * 
-   * // 自定义默认后缀
-   * config.defaultSuffix = '节';
-   * // 结果示例：'第一百标题' → '第100节 标题'
-   * 
-   * // 复杂配置示例1
-   * config.removePunctuation = true;
-   * config.autoAddSpace = true;
-   * config.convertZeroToPreface = true;
-   * config.defaultSuffix = '回';
-   * // 结果示例：'第零回内容！' → '序回 内容'
-   * 
-   * // 复杂配置示例2
-   * config.removePunctuation = false;
-   * config.autoAddSpace = false;
-   * config.convertZeroToPreface = false;
-   * config.defaultSuffix = '篇';
-   * // 结果示例：'第壹佰贰拾叁内容。' → '第123篇内容。'
+     
+    // 保留所有标点并不自动添加空格
+    config.removePunctuation = false;
+    config.autoAddSpace = false;
+    // 结果示例：'第1章内容。' → '第1章内容。'
+     
+    // 启用零值转换
+    config.convertZeroToPreface = true;
+    // 结果示例：'第零章' → '序章'
+     
+    // 自定义配置组合1
+    config.removePunctuation = true;
+    config.autoAddSpace = false;
+    // 结果示例：'第1章内容！' → '第1章内容'
+     
+    // 自定义配置组合2
+    config.removePunctuation = false;
+    config.autoAddSpace = true;
+    // 结果示例：'第1章内容。' → '第1章 内容。'
+     
+    // 自定义默认后缀
+    config.defaultSuffix = '节';
+    // 结果示例：'第一百标题' → '第100节 标题'
+     
+    // 复杂配置示例1
+    config.removePunctuation = true;
+    config.autoAddSpace = true;
+    config.convertZeroToPreface = true;
+    config.defaultSuffix = '回';
+    // 结果示例：'第零回内容！' → '序回 内容'
+    
+    // 复杂配置示例2
+    config.removePunctuation = false;
+    config.autoAddSpace = false;
+    config.convertZeroToPreface = false;
+    config.defaultSuffix = '篇';
+    // 结果示例：'第壹佰贰拾叁内容。' → '第123篇内容。'
   
   const config = {
   
