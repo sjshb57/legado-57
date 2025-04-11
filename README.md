@@ -215,7 +215,7 @@
    * 5. 返回新正则
    * 
    * 使用示例：
-   * 
+    
     getSpaceRegex('章') → /[\s　]*章[\s　]+/
 
     getSpaceRegex('回') → /[\s　]*回[\s　]+/
