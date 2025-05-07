@@ -1,0 +1,17 @@
+[
+  {
+    "excludeScope": "",
+    "group": "格式",
+    "id": 1,
+    "isEnabled": true,
+    "isRegex": true,
+    "name": "#01 数字标题(全注释版)#JS",
+    "order": 27,
+    "pattern": "^第[零〇一二三四五六七八九十百千两万]{1,9}[章节回集卷部篇话讲段](.*)",
+    "replacement": "@js:if (result.slice(0,1)==\"第\") {\n  // ==== 1. 正则预编译 ====\n  /* 作用：匹配中文数字标题\n   * 组1: 中文数字（如'二百三'）\n   * 组2: 章节标识（如'章'/'节'）\n   * 组3: 标题正文\n   * 修改点：\n   *   - {1,7}→{1,9} 支持更长数字\n   *   - 增加'万'和'讲段'标识 */\n  const chapterPattern = /^第([零〇一二三四五六七八九十百千两万]+)([章节回集卷部篇话讲段])(.*)/;\n\n  // ==== 2. 中文数字映射表 ====\n  /* 结构说明：\n   * 基础数字：零(0)~九(9)\n   * 特殊数字：两=2\n   * 单位数字：十(10)、百(100)、千(1000)、万(10000)\n   * 注意：'万'必须放在单位数字最后 */\n  const chineseNumbers = {\n    '零':0, '〇':0, '一':1, '二':2, '两':2, '三':3, '四':4, '五':5,\n    '六':6, '七':7, '八':8, '九':9, '十':10, '百':100, '千':1000, '万':10000\n  };\n\n  // ==== 3. 变量初始化 ====\n  /* total: 累计最终结果（如二百→200）\n   * temp: 当前数字组合的临时值\n   * titlePart: 处理后的标题正文 */\n  let total = 0;\n  let temp = 0;\n  let titlePart = '';\n\n  // ==== 4. 正则匹配 ====\n  /* 执行匹配并验证结果\n   * 成功匹配示例：\n   * '第两百三十五章 内容' → \n   *   ['两百三十五', '章', ' 内容'] */\n  let titleMatch = result.match(chapterPattern);\n  if (titleMatch) {\n    // ==== 4.1 标题预处理 ====\n    /* 处理流程：\n     * 1. 提取组3（标题正文）\n     * 2. 去除首尾空白字符 */\n    titlePart = (titleMatch[3] || '').trim();\n\n    // ==== 4.2 中文数字转换 ====\n    /* 核心算法步骤：\n     * 1. 遍历每个中文数字字符\n     * 2. 单位数字：temp×单位值后累加到total\n     * 3. 普通数字：累加到temp\n     * 4. 最后处理剩余的temp值 */\n    let numStr = titleMatch[1];\n    for (let i = 0; i < numStr.length; i++) {\n      let char = numStr[i];\n      let val = chineseNumbers[char];\n\n      // -- 单位数字处理 --\n      if ([10, 100, 1000, 10000].includes(val)) {\n        temp = (temp === 0 ? 1 : temp) * val; // 零值处理为1\n        total += temp;\n        temp = 0; // 重置临时值\n      }\n      // -- 普通数字处理 --\n      else if (val !== undefined) {\n        temp += val;\n      }\n    }\n    total += temp; // 最终累加\n\n    // ==== 4.3 标点处理 ====\n    /* 处理规则：\n     * 移除标题末尾的以下标点：。！？.\n     * 示例：\n     * '内容！' → '内容'\n     * '内容。测试' → 不处理 */\n    titlePart = titlePart.replace(/[。！？.]+$/, '');\n\n    // ==== 4.4 空格检查 ====\n    /* 规则说明：\n     * 1. 检查原文章节标识后是否有空格（含全角空格）\n     * 2. 无空格时添加一个空格\n     * 正则说明：\n     * [\\\\s　]* 匹配0个或多个空格（含全角）\n     * ${suffix}[\\\\s　]+ 匹配标识符后的空格 */\n    const suffix = titleMatch[2];\n    let hasSpace = new RegExp(`[\\\\s　]*${suffix}[\\\\s　]+`).test(result);\n\n    // ==== 4.5 结果组装 ====\n    /* 格式规则：\n     * 有正文：'第X章 内容'\n     * 无正文：'第X章' */\n    if (titlePart) {\n      result = `第${total}${suffix}${hasSpace ? '' : ' '}${titlePart}`;\n    } else {\n      result = `第${total}${suffix}`;\n    }\n  }\n}\n// 非'第'开头内容返回空字符串（保持原有逻辑）\nelse \"\"",
+    "scope": "",
+    "scopeContent": false,
+    "scopeTitle": true,
+    "timeoutMillisecond": 3000
+  }
+]
