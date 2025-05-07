@@ -1,0 +1,17 @@
+[
+  {
+    "excludeScope": "",
+    "group": "格式",
+    "id": 1,
+    "isEnabled": true,
+    "isRegex": true,
+    "name": "#01 数字标题#JS",
+    "order": 1,
+    "pattern": "^第[零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]{1,9}[章节回集卷部篇话讲段]?(.*)",
+    "replacement": "@js:(function() {\n\n  const Config = {\n    removePunctuation: true,\n    autoAddSpace: true,\n    convertZeroToPreface: false,\n    maxCacheSize: 100,\n    defaultSuffix: '章',\n    \n    update: function(newConfig) {\n      Object.assign(this, newConfig);\n    }\n  };\n  \n  const Regex = {\n    cache: {},\n    patterns: {\n      chinesePunctuation: /^[：、，；？！（）「」【】]/,\n      chapter: /^第([零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/,\n      titlePunctuation: /[。！？.，：；]+$/\n    },\n    \n    getSpaceRegex: function(suffix) {\n      if (this.cache[suffix]) return this.cache[suffix];\n      \n      const keys = Object.keys(this.cache);\n      if (keys.length >= Config.maxCacheSize) {\n        delete this.cache[keys[Math.floor(Math.random() * keys.length)]];\n      }\n      \n      this.cache[suffix] = new RegExp(`第[^\\s]*${suffix}[\\s　]+`);\n      return this.cache[suffix];\n    }\n  };\n  \n  const NumberConverter = {\n    map: {\n      '零':0, '〇':0,\n      '一':1, '二':2, '两':2,\n      '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9,\n      '十':10, '百':100, '千':1000, '万':10000,\n      '壹':1, '贰':2, '叁':3, '肆':4, '伍':5, \n      '陆':6, '柒':7, '捌':8, '玖':9,\n      '拾':10, '佰':100, '仟':1000, '萬':10000,\n      '貳':2, '參':3, '陸':6\n    },\n    \n    convert: function(chineseNum) {\n      let total = 0;\n      let temp = 0;\n      \n      for (let i = 0; i < chineseNum.length; i++) {\n        let char = chineseNum[i];\n        let val = this.map[char];\n        \n        if ([10, 100, 1000, 10000].includes(val)) {\n          temp = (temp === 0 ? 1 : temp) * val;\n          total += temp;\n          temp = 0;\n        }\n        else if (val !== undefined) {\n          temp += val;\n        }\n      }\n      \n      return total + temp;\n    }\n  };\n  \n  function processTitle(title) {\n    if (!title.startsWith(\"第\")) return title;\n    \n    if (Config.removePunctuation) {\n      title = title.replace(Regex.patterns.titlePunctuation, '');\n    }\n    \n    const match = title.match(Regex.patterns.chapter);\n    if (!match) return title;\n    \n    const [, chineseNum, originalSuffix, titlePart] = match;\n    let suffix = originalSuffix || Config.defaultSuffix;\n    const cleanTitlePart = (titlePart || '').trim();\n    \n    let number = NumberConverter.convert(chineseNum);\n    \n    if (number === 0 && Config.convertZeroToPreface) {\n      number = '';\n      suffix = '序' + suffix;\n    }\n    \n    let hasSpace = Config.autoAddSpace \n      ? /[\\s　]/.test(title.slice(match[0].length - (originalSuffix || Config.defaultSuffix).length - 1))\n      : true;\n    \n    if (cleanTitlePart) {\n      const shouldAddSpace = Config.autoAddSpace && \n                           !hasSpace && \n                           !Regex.patterns.chinesePunctuation.test(cleanTitlePart);\n      return `第${number}${suffix}${shouldAddSpace ? ' ' : ''}${cleanTitlePart}`;\n    }\n    \n    return `第${number}${suffix}`;\n  }\n  \n  return processTitle(result);\n})();",
+    "scope": "",
+    "scopeContent": false,
+    "scopeTitle": true,
+    "timeoutMillisecond": 3000
+  }
+]
