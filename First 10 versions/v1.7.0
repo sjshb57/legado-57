@@ -1,0 +1,17 @@
+[
+  {
+    "excludeScope": "",
+    "group": "格式",
+    "id": 1,
+    "isEnabled": true,
+    "isRegex": true,
+    "name": "#01 数字标题#JS",
+    "order": 27,
+    "pattern": "^第[零〇一二三四五六七八九十百千两]{1,7}[章节回集卷部篇话](.*)",
+    "replacement": "@js:if (result.slice(0,1)==\"第\") {\n  /*==== 正则预编译 ====*/\n  const chapterPattern = /^第([零〇一二三四五六七八九十百千两]+)([章节回集卷部篇话])(.*)/;\n\n  /*==== 中文数字映射表 ====*/\n  // 包含所有可能的中文数字字符及其对应的阿拉伯数字值\n  // 特别说明：'两'和'二'都映射为2，'零'和'〇'都映射为0\n  let chineseNumbers = {'零':0,'〇':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'百':100,'千':1000};\n\n  /*==== 变量初始化 ====*/\n  // total - 用于存储最终累加的数字结果\n  // temp - 临时存储当前正在计算的中间值\n  // titlePart - 存储从原始文本提取并处理后的标题内容\n  let total = 0;\n  let temp = 0;\n  let titlePart = '';\n\n  /*==== 正则匹配 ====*/\n  // 使用预编译的正则表达式匹配（优化后）\n  // 匹配组1: 中文数字部分（如'二百三十'）\n  // 匹配组2: 章节标识符（如'章'/'节'/'回'）\n  // 匹配组3: 标题正文内容\n  let titleMatch = result.match(chapterPattern);\n\n  if (titleMatch) {\n    /*==== 标题预处理 ====*/\n    // 从匹配结果中提取标题部分，并去除首尾空白字符\n    titlePart = (titleMatch[3] || '').trim();\n\n    /*==== 中文数字转换 ====*/\n    // 获取中文数字部分以便逐个字符处理\n    let numStr = titleMatch[1];\n    \n    // 遍历中文数字的每个字符\n    for (let i = 0; i < numStr.length; i++) {\n      let char = numStr[i];  // 当前正在处理的汉字数字\n      let val = chineseNumbers[char];  // 获取对应的数值\n\n      // 处理十、百、千等单位数字\n      if (val === 10 || val === 100 || val === 1000) {\n        // 计算单位值：如果temp为0则视为1，否则相乘\n        temp = (temp === 0 ? 1 : temp) * val;\n        // 将计算结果累加到总和中\n        total += temp;\n        // 重置临时值\n        temp = 0;\n      }\n      // 处理普通数字（一至九）\n      else if (val !== undefined) {\n        // 将数字值累加到临时值中\n        temp += val;\n      }\n    }\n    // 将最后剩余的临时值加到总和中\n    total += temp;\n\n    /*==== 标题后处理 ====*/\n    // 检查并移除标题末尾的中文句号（仅处理句号，不影响其他标点）\n    if (titlePart.endsWith('。')) {\n      // 移除字符串的最后一个字符（即句号）\n      titlePart = titlePart.slice(0, -1);\n    }\n\n    /*==== 结果组装 ====*/\n    // 获取章节标识符（如'章'/'节'等）\n    let suffix = titleMatch[2];\n    \n    // 判断是否需要添加空格\n    if (titlePart) {\n      // 检查原标题中章节标识后是否已有空格\n      let hasSpace = new RegExp(suffix + '\\\\s').test(result);\n      // 根据检查结果决定是否添加空格\n      result = '第' + total + suffix + (hasSpace ? '' : ' ') + titlePart;\n    } else {\n      // 如果没有标题内容，直接返回章节编号\n      result = '第' + total + suffix;\n    }\n  }\n}\n// 不符合条件的输入（不以'第'开头）返回空字符串\nelse{\"\"}",
+    "scope": "",
+    "scopeContent": false,
+    "scopeTitle": true,
+    "timeoutMillisecond": 3000
+  }
+]
