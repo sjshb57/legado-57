@@ -1,0 +1,17 @@
+[
+  {
+    "excludeScope": "",
+    "group": "格式",
+    "id": 1,
+    "isEnabled": true,
+    "isRegex": true,
+    "name": "#01 数字标题#JS",
+    "order": 27,
+    "pattern": "^第[零〇一二三四五六七八九十百千两]{1,7}[章节回集卷部篇](.*)",
+    "replacement": "@js:if (result.slice(0,1)==\"第\") {\n  // 中文数字到阿拉伯数字的映射表 包含零到千的数字\n  let chineseNumbers = {'零':0,'〇':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'百':100,'千':1000};\n  let total = 0  // 累计的总数值\n  let temp = 0   // 临时计算中间值\n  let titlePart = ''  // 存储提取的标题内容\n  \n  // 使用正则表达式匹配章节号和标题内容\n  let titleMatch = result.match(/^第([零〇一二三四五六七八九十百千两]+)([章节回集卷部篇])(.*)/);\n  if (titleMatch) {\n    // 获取并清理标题部分 去除前后空格\n    titlePart = (titleMatch[3] || '').trim();\n    \n    // 数字转换开始\n    let numStr = titleMatch[1]  // 获取中文数字部分\n    for (let i = 0; i < numStr.length; i++) {\n      let char = numStr[i]  // 当前处理的汉字\n      let val = chineseNumbers[char]  // 获取对应的数字值\n      \n      // 处理十百千等单位数字\n      if (val === 10 || val === 100 || val === 1000) {\n        temp = (temp === 0 ? 1 : temp) * val  // 计算单位值\n        total += temp  // 累加到总和\n        temp = 0  // 重置临时值\n      } else if (val !== undefined) {\n        temp += val  // 累加普通数字\n      }\n    }\n    total += temp  // 加入最后未处理的数字\n    \n    // 处理标题末尾的句号 仅删除中文句号\n    if (titlePart.endsWith('。')) {\n      titlePart = titlePart.slice(0, -1)  // 移除最后一个字符\n    }\n    \n    // 构建最终结果字符串\n    let suffix = titleMatch[2]  // 获取章节标识（章/节等）\n    if (titlePart) {\n      // 检查原标题是否已有空格\n      let hasSpace = new RegExp(suffix + '\\\\s').test(result)\n      // 根据情况决定是否添加空格\n      result = '第' + total + suffix + (hasSpace ? '' : ' ') + titlePart\n    } else {\n      // 没有标题时直接返回章节号\n      result = '第' + total + suffix\n    }\n  }\n}\nelse{\"\"}  // 非章节标题返回空字符串",
+    "scope": "",
+    "scopeContent": false,
+    "scopeTitle": true,
+    "timeoutMillisecond": 3000
+  }
+]
