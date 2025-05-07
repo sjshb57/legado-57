@@ -1,0 +1,17 @@
+[
+  {
+    "excludeScope": "",
+    "group": "格式",
+    "id": 1,
+    "isEnabled": true,
+    "isRegex": true,
+    "name": "#01 数字标题#JS",
+    "order": 27,
+    "pattern": "^第[零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]{1,9}[章节回集卷部篇话讲段]?(.*)",
+    "replacement": "@js:if (result.slice(0,1)==\"第\") {\n  const config = {\n    removePunctuation: true,\n    autoAddSpace: true,\n    convertZeroToPreface: false,\n    maxCacheSize: 100,\n    defaultSuffix: '章'\n  };\n\n  const regexCache = {\n    spaceCheck: {},\n    punctuation: /[。！？.]+$/,\n    chinesePunctuation: /^[：、，；？！（）「」【】]/,\n    chapterPattern: /^第([零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/,\n    allTitlePunctuation: /[。！？.，：；]+$/\n  };\n\n  const getSpaceRegex = (suffix) => {\n    if (regexCache.spaceCheck[suffix]) {\n      return regexCache.spaceCheck[suffix];\n    }\n    \n    const keys = Object.keys(regexCache.spaceCheck);\n    if (keys.length >= config.maxCacheSize) {\n      delete regexCache.spaceCheck[keys[Math.floor(Math.random() * keys.length)]];\n    }\n    \n    const newRegex = new RegExp(`[\\\\s　]*${suffix}[\\\\s　]+`);\n    regexCache.spaceCheck[suffix] = newRegex;\n    \n    return newRegex;\n  };\n\n  const chineseNumbers = {\n    '零':0, '〇':0,\n    '一':1, '二':2, '两':2,\n    '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9,\n    '十':10, '百':100, '千':1000, '万':10000,\n    '壹':1, '贰':2, '叁':3, '肆':4, '伍':5, \n    '陆':6, '柒':7, '捌':8, '玖':9,\n    '拾':10, '佰':100, '仟':1000, '萬':10000,\n    '貳':2, '參':3, '陸':6\n  };\n\n  let total = 0;\n  let temp = 0;\n  let titlePart = '';\n  let suffix = '';\n  const isChapterTitle = result.slice(0,1) === \"第\";\n\n  if (config.removePunctuation) {\n    result = result.replace(regexCache.allTitlePunctuation, '');\n  }\n\n  let titleMatch = isChapterTitle ? result.match(regexCache.chapterPattern) : null;\n  if (titleMatch) {\n    suffix = titleMatch[2] || config.defaultSuffix;\n    titlePart = (titleMatch[3] || '').trim();\n\n    let numStr = titleMatch[1];\n    for (let i = 0; i < numStr.length; i++) {\n      let char = numStr[i];\n      let val = chineseNumbers[char];\n\n      if ([10, 100, 1000, 10000].includes(val)) {\n        temp = (temp === 0 ? 1 : temp) * val;\n        total += temp;\n        temp = 0;\n      }\n      else if (val !== undefined) {\n        temp += val;\n      }\n    }\n    total += temp;\n\n    if (total === 0 && config.convertZeroToPreface) {\n      total = '';\n      suffix = '序' + suffix;\n    }\n\n    let hasSpace = config.autoAddSpace \n      ? getSpaceRegex(titleMatch[2] || config.defaultSuffix).test(result)\n      : true;\n\n    if (titlePart) {\n      const shouldAddSpace = !hasSpace && !regexCache.chinesePunctuation.test(titlePart);\n      result = `第${total}${suffix}${shouldAddSpace ? ' ' : ''}${titlePart}`;\n    } else {\n      result = `第${total}${suffix}`;\n    }\n  }\n  \n  result\n}",
+    "scope": "",
+    "scopeContent": false,
+    "scopeTitle": true,
+    "timeoutMillisecond": 3000
+  }
+]
