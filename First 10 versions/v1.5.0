@@ -1,0 +1,15 @@
+[
+  {
+    "group": "格式",
+    "id": 1,
+    "isEnabled": true,
+    "isRegex": true,
+    "name": "#01 数字标题#JS",
+    "order": 27,
+    "pattern": "^第[零〇一二三四五六七八九十百千两]{1,7}[章节回集卷部篇](.*)",
+    "replacement": "@js:if (result.slice(0,1)==\"第\") {\n  // 中文数字到阿拉伯数字的映射表\n  let chineseNumbers = {'零':0,'〇':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'百':100,'千':1000};\n  \n  let total = 0;  // 累计数值\n  let temp = 0;   // 临时计算值\n  let titlePart = ''; // 存储标题内容\n  \n  // 正则匹配分组：1=中文数字 2=章节标识 3=标题\n  let titleMatch = result.match(/^第([零〇一二三四五六七八九十百千两]+)([章节回集卷部篇])(.*)/);\n  \n  if (titleMatch) {\n    titlePart = (titleMatch[3] || '').trim();\n    \n    // 中文数字转换核心逻辑\n    let numStr = titleMatch[1];\n    for (let i = 0; i < numStr.length; i++) {\n      let char = numStr[i];\n      let val = chineseNumbers[char];\n      \n      if (val === 10 || val === 100 || val === 1000) {\n        temp = (temp === 0 ? 1 : temp) * val;\n        total += temp;\n        temp = 0;\n      } else if (val !== undefined) {\n        temp += val;\n      }\n    }\n    total += temp;\n    \n    // 移除标题末尾句号\n    if (titlePart.endsWith('。')) {\n      titlePart = titlePart.slice(0, -1);\n    }\n    \n    // 构建最终结果\n    let suffix = titleMatch[2];\n    if (titlePart) {\n      let hasSpace = new RegExp(suffix + '\\\\s').test(result);\n      result = '第' + total + suffix + (hasSpace ? '' : ' ') + titlePart;\n    } else {\n      result = '第' + total + suffix;\n    }\n  }\n  return result; // 返回处理后的章节标题\n}\nreturn ''; // 不符合条件的输入返回空字符串",
+    "scopeContent": false,
+    "scopeTitle": true,
+    "timeoutMillisecond": 3000
+  }
+]
