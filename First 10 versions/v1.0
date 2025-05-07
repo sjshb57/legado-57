@@ -1,0 +1,15 @@
+[
+  {
+    "group": "格式",
+    "id": 1,
+    "isEnabled": true,
+    "isRegex": true,
+    "name": "#01 数字标题#JS",
+    "order": 27,
+    "pattern": "^第[零〇一二三四五六七八九十百千两]{1,7}[章节](.*)",
+    "replacement": "@js:if (result.slice(0,1)==\"第\") {\n  let chineseNumbers = {'零':0,'〇':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'百':100,'千':1000};\n  let total = 0;\n  let temp = 0;\n  let titlePart = '';\n  \n  // 提取标题部分\n  let titleMatch = result.match(/^第[零〇一二三四五六七八九十百千两]{1,7}[章节](.*)/);\n  if (titleMatch && titleMatch[1]) {\n    titlePart = titleMatch[1].trim();\n  }\n  \n  // 转换中文数字\n  for (let i = 1; i < result.length; i++) {\n    let char = result[i];\n    if (chineseNumbers[char] === 100 || chineseNumbers[char] === 1000) {\n      temp *= chineseNumbers[char];\n      total += temp;\n      temp = 0;\n    } else if (chineseNumbers[char] === 10) {\n      temp = (temp === 0 ? 1 : temp) * chineseNumbers[char];\n      total += temp;\n      temp = 0;\n    } else if (chineseNumbers[char] !== undefined) {\n      temp += chineseNumbers[char];\n    }\n  }\n  total += temp;\n  \n  // 构建结果\n  if (titlePart) {\n    result = '第' + total + '章 ' + titlePart;\n  } else {\n    result = '第' + total + '章';\n  }\n}\nelse{\"\"}",
+    "scopeContent": false,
+    "scopeTitle": true,
+    "timeoutMillisecond": 3000
+  }
+]
