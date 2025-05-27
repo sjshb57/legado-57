@@ -310,6 +310,7 @@
     8. 结果组装 → 生成最终标题
   
   function processTitle(title) {
+  
     // 纯数字标题处理
     const digitalMatch = title.match(Regex.patterns.digitalChapter);
     if (digitalMatch) {
