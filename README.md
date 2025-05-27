@@ -7,125 +7,134 @@
 #### 主要功能亮点：
 
     1. 全面支持简繁体中文数字转换（零-萬）
-    2. 智能空格处理，自动检测并修正空格问题
-    3. 标点符号规范化（现在适用于所有标题类型）
-    4. 特殊章节处理（如将'第零章'转为'序章'）
-    5. 完整支持繁体中文数字（壹貳參等）
-    6. 灵活的配置系统（支持动态修改配置）
-    7. 完善的文档和注释系统（包含详细的使用说明）
-    8. 支持无标识符标题格式（例如第一百标题）
-    9. 兼容性广泛（支持多种章节标识符） 
+    2. 支持繁体大写数字（壹貳參等）
+    3. 智能空格处理（智能处理章节与内容间的空格）
+    4. 标点符号规范化（移除内容末尾冗余标点）
+    5. 非章节标题句号清理（『请。假。』→『请假』）
+    6. 特殊章节处理（『第零章』→『序章』）
+    7. 支持纯数字标题转换（『1 内容』→『第1章 内容』）
+    8. 无标识符标题兼容（『第一百标题』→『第100章 标题』）
+    9. 多章节标识符适配（章/节/回/集等）
+    10. 灵活的配置系统（动态调整空格/标点等规则）
    * 典型输入输出示例（五大类）：
    * 输入 → 输出
      
-   *基础转换示例
+   *基础数字转换
    
-    '第一章 内容' → '第1章 内容'
-    '第壹佰贰拾叁节' → '第123节'
-    '第两章测试' → '第2章 测试'
+    『第一章 内容』 → 『第1章 内容』
+    『第壹佰贰拾叁节』 → 『第123节』
+    『第伍萬陆仟柒佰捌拾篇』 → 『第5678篇』
      
-   *复杂数字示例
+   *零值与特殊格式
    
-    '第伍萬陆仟柒佰捌拾玖篇' → '第56789篇'
-    '第壹萬零伍佰章' → '第10500章'
-    '第參佰陸拾伍章' → '第365章'
+    『第零回 内容』 → 『序回 内容』
+    『第一百标题』 → 『第100章 标题』
+    『第〇章 空白』 → 『第0章 空白』
      
-   *零值处理示例
+   *空格与标点规范
    
-    '第零回 序言' → '序回 序言' (开启零值转换时)
-    '第零卷' → '序卷' (开启零值转换时)
-    '第〇章 空白' → '第0章 空白' (未开启零值转换时)
+    『第1章内容』 → 『第1章 内容』（自动补空格）
+    『第1章：简介』 → 『第1章：简介』（中文标点前不补空格）
+    『请假。』 → 『请假』（移除非标题句号）
      
-   *无标识符标题示例
+   *纯数字标题处理
    
-    '第一百标题' → '第100章 标题'
-    '第三百六十五测试' → '第365章 测试'
-    '第五百零二' → '第502章'
+    『123』 → 『第123章』
+    『456内容』 → 『第456章 内容』
+    『01 测试』 → 『第01章 测试』
      
-   *标点与空格示例
+   *混合与边界示例
    
-    '内容。' → '内容' (全局标点移除)
-    '第1章内容' → '第1章 内容' (自动补空格)
-    '第1章：简介' → '第1章：简介' (中文标点前不补空格)
+    『第1章　内容』 → 『第1章　内容』（保留全角空格）
+    『第零章测试』 → 『序章 测试』（零值转换+空格）
+    『第100章.』 → 『第100章』（标点清理优先级）
 
 ###  // ==== 2. 配置系统 ====
    * 配置说明：
-   * 所有功能行为都可通过config对象进行精细控制。
-   * 修改配置后无需重启，立即生效。
+   * 所有功能行为都可通过Config对象进行精细控制，支持动态修改配置。
 #### 完整配置选项说明：
     
-   * removePunctuation - 控制是否移除标题末尾标点（现在适用于所有标题类型）
-   *   true: 自动移除标题末尾的。！？.等标点（默认）
+   * removePunctuation - 控制是否移除标题末尾标点
+   *   true: 自动移除以『第』开头的标题末尾的。！？.等标点（默认true）
    *   false: 保留所有标点符号
-   *   影响范围：所有标题（包括非章节标题）
+   *   影响范围：仅章节标题（以『第』开头的标题）
       
-      示例：'内容。' → '内容' (true时)
+      示例：『第一章。』 → 『第1章』 (true时)
       
    * autoAddSpace - 控制是否自动添加空格
-   *   true: 在章节号和内容间智能添加空格（默认）
+   *   true: 在章节号和内容间智能添加空格（默认true）
    *   false: 保持原始空格状态
       
-      示例：'第1章内容' → '第1章 内容' (true时)
+      示例：『第1章内容』 → 『第1章 内容』 (true时)
     
    * convertZeroToPreface - 零值特殊处理
-   *   true: 将'第零章'转换为'序章'
-   *   false: 保持'第0章'格式（默认）
+   *   true: 将『第零章』转换为『序章』（默认false）
+   *   false: 保持『第0章』格式
       
-      示例：'第零回' → '序回' (true时)
+      示例：『第零回』 → 『序回』 (true时)
     
    * maxCacheSize - 最大缓存条目数
    *   数值: 限制每种缓存的最大条目数（默认100）
      
-      示例：防止内存无限增长
+      示例：设置为100时，超过100个正则表达式后会随机清理
     
    * defaultSuffix - 无标识符时的默认后缀
-   *   字符串: 当标题无章节标识符时使用的默认后缀
-   *   默认值: '章'
+   *   字符串: 当标题无章节标识符时使用的默认后缀（默认『章』）
       
-      示例: '第一百标题' → '第100章 标题'
+      示例: 『第一百标题』 → 『第100章 标题』
+    
+   * removePeriods - 控制是否移除非章节标题中的所有句号
+   *   true: 自动移除不以『第』开头的标题中的。和.标点（默认true）
+   *   false: 保留句号
+   *   影响范围：仅非章节标题（不以『第』开头的标题）
+      
+      示例：
+        『内容。』 → 『内容』 (true时)
+        『标题.』 → 『标题』 (true时)
     
    * 配置示例：
      
     // 保留所有标点并不自动添加空格
-    config.removePunctuation = false;
-    config.autoAddSpace = false;
-    // 结果示例：'第1章内容。' → '第1章内容。'
+    Config.update({ removePunctuation: false, autoAddSpace: false });
+    // 结果示例：『第1章内容。』 → 『第1章内容。』
      
     // 启用零值转换
-    config.convertZeroToPreface = true;
-    // 结果示例：'第零章' → '序章'
+    Config.update({ convertZeroToPreface: true });
+    // 结果示例：『第零章』 → 『序章』
      
     // 自定义配置组合1
-    config.removePunctuation = true;
-    config.autoAddSpace = false;
-    // 结果示例：'第1章内容！' → '第1章内容'
+    Config.update({ removePunctuation: true, autoAddSpace: false });
+    // 结果示例：『第1章内容！』 → 『第1章内容』
      
     // 自定义配置组合2
-    config.removePunctuation = false;
-    config.autoAddSpace = true;
-    // 结果示例：'第1章内容。' → '第1章 内容。'
+    Config.update({ removePunctuation: false, autoAddSpace: true });
+    // 结果示例：『第1章内容。』 → 『第1章 内容。』
      
     // 自定义默认后缀
-    config.defaultSuffix = '节';
-    // 结果示例：'第一百标题' → '第100节 标题'
+    Config.update({ defaultSuffix: '节' });
+    // 结果示例：『第一百标题』 → 『第100节 标题』
      
     // 复杂配置示例1
-    config.removePunctuation = true;
-    config.autoAddSpace = true;
-    config.convertZeroToPreface = true;
-    config.defaultSuffix = '回';
-    // 结果示例：'第零回内容！' → '序回 内容'
+    Config.update({ 
+      removePunctuation: true,
+      autoAddSpace: true,
+      convertZeroToPreface: true,
+      defaultSuffix: '回'
+    });
+    // 结果示例：『第零回内容！』 → 『序回 内容』
     
     // 复杂配置示例2
-    config.removePunctuation = false;
-    config.autoAddSpace = false;
-    config.convertZeroToPreface = false;
-    config.defaultSuffix = '篇';
-    // 结果示例：'第壹佰贰拾叁内容。' → '第123篇内容。'
+    Config.update({ 
+      removePunctuation: false,
+      autoAddSpace: false,
+      convertZeroToPreface: false,
+      defaultSuffix: '篇'
+    });
+    // 结果示例：『第壹佰贰拾叁内容。』 → 『第123篇内容。』
   
-  const config = {
+  const Config = {
   
-    removePunctuation: true,    // 是否移除末尾标点
+    removePunctuation: true,    // 是否移除章节末尾标点
 
     autoAddSpace: true,         // 是否自动添加空格
     
@@ -133,112 +142,233 @@
     
     maxCacheSize: 100,          // 最大缓存条目数
     
-    defaultSuffix: '章'         // 无标识符时的默认后缀
-  }
+    defaultSuffix: '章',        // 无标识符时的默认后缀
+    
+    removePeriods: true,        // 是否移除标题句号
+    
+    /*
+     * 方法：update
+     * 功能：动态更新配置参数
+     * 参数：newConfig - 包含新配置项的对象
+     * 返回：无
+     */
+    update: function(newConfig) {
+      Object.assign(this, newConfig);
+    }
+  };
 
 ###  // ==== 3. 正则表达式系统 ====
-   * 正则表达式缓存系统：
-   * 所有正则表达式都经过预编译和缓存，确保最佳性能。
-   * 系统会自动管理正则表达式的生命周期。 
+   * Regex 对象说明：
+   * 封装所有正则表达式相关操作，包含预编译模式和智能缓存系统。
 #### 预编译的正则表达式列表：
 
-    1. spaceCheck - 动态生成的空间检测正则（按章节标识缓存）
-   *   功能：检测章节标识符前后的空格
-   *   生成规则：/[\s　]*章[\s　]+/
-   *   缓存策略：每种标识符单独缓存
-   *   示例：
-   *     '章' → /[\s　]*章[\s　]+/
-   *     '节' → /[\s　]*节[\s　]+/
-      
-    2. punctuation - 标点符号检测（匹配。！？.等结尾标点）
-   *   模式：/[。！？.]+$/
-   *   用途：移除章节标题末尾标点
-   *   示例：
-   *     '内容。' → 匹配'。'
-   *     '标题！' → 匹配'！'
-    
-    3. chinesePunctuation - 中文标点检测（匹配：、，；等）
+    1. chinesePunctuation - 中文标点检测（匹配：、，；等）
    *   模式：/^[：、，；？！（）「」【】]/
    *   用途：防止在中文标点前添加空格
    *   示例：
-   *     '：内容' → 匹配'：'
-   *     '，测试' → 匹配'，'
-    
-    4. chapterPattern - 主匹配模式（识别中文数字标题）
-   *   模式：/^第([零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/
-   *   修改说明：章节标识符变为可选
-   *   分组：
-   *     第1组：中文数字部分
-   *     第2组：章节标识符（可能为空）
-   *     第3组：标题内容
+   *     『：内容』 → 匹配『：』
+   *     『，测试』 → 匹配『，』
+      
+    2. chapter - 主匹配模式（识别中文数字标题）
+   *   完整模式：/^第([零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/
+   *   分组说明：
+   *     第1组([零-萬]+)：中文数字部分
+   *     第2组([章节回集卷部篇话讲段]?)：章节标识符（可选）
+   *     第3组(.*)：标题内容
    *   示例：
-   *     '第壹佰贰拾叁节' → ['壹佰贰拾叁', '节', '']
-   *     '第一百标题' → ['一百', '', '标题']
+   *     『第壹佰贰拾叁节』 → [『壹佰贰拾叁』, 『节』, 『』]
+   *     『第一百标题』  → [『一百』, 『』, 『标题』]
+   *     『第两万零五卷』 → [『两万零五』, 『卷』, 『』]
     
-    5. allTitlePunctuation - 全局标点处理（匹配所有标题结尾标点）
-   *   增强模式：/[。！？.，：；]+$/
-   *   修改说明：现在能正确处理更多标点类型
+    3. digitalChapter - 数字标题匹配模式
+   *   完整模式：/^(\d+)\s*(.*)/
+   *   分组说明：
+   *     第1组(\d+)：数字部分
+   *     第2组(.*)：标题内容
+   *   用途：处理纯数字标题
    *   示例：
-   *     '内容。' → 匹配'。'
-   *     '标题！' → 匹配'！'
-   *     '结尾；' → 匹配'；'
+   *     『1 内容』 → [『1』, 『内容』]
+   *     『123测试』 → [『123』, 『测试』]
     
-  const regexCache = {
+    4. titlePunctuation - 全局标点处理（匹配所有标题结尾标点）
+   *   完整模式：/[。！？.，：；]+$/
+   *   支持标点：中文。！？，：；和英文.
+   *   示例：
+   *     『内容。』 → 匹配『。』
+   *     『标题！』 → 匹配『！』
+   *     『结尾；』 → 匹配『；』
+    
+    5. period - 非章节类型标题句号匹配模式
+   *   完整模式：/[。.]/g
+   *   用途：全局匹配所有中文和英文句号
+   *   示例：
+   *     『内容。』 → 匹配『。』
+   *     『标题.』 → 匹配『.』
+    
+  const Regex = {
+  
+    // 正则表达式缓存
+    cache: {},
+    
+    // 预编译的正则表达式模式
+    patterns: {
+      chinesePunctuation: /^[：、，；？！（）「」【】]/,
+      chapter: /^第([零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/,
+      digitalChapter: /^(\d+)\s*(.*)/,
+      titlePunctuation: /[。！？.，：；]+$/,
+      period: /[。.]/g
+    },
+    
+    /*
+     * 方法：getSpaceRegex
+     * 功能：获取或创建空格检测正则表达式（带缓存）
+     * 参数：suffix - 章节标识符（如『章』/『节』）
+     * 返回：预编译的正则对象
+     */
+    getSpaceRegex: function(suffix) {
+      if (this.cache[suffix]) {
+        return this.cache[suffix];
+      }
+      
+      const keys = Object.keys(this.cache);
+      if (keys.length >= Config.maxCacheSize) {
+        delete this.cache[keys[Math.floor(Math.random() * keys.length)]];
+      }
+      
+      this.cache[suffix] = new RegExp(`第[^\\s]*${suffix}[\\s　]+`);
+      return this.cache[suffix];
+    }
+  };
 
-    // 空格检测正则缓存（按章节标识动态生成）
-    // 结构：
-    { '章': /[\s　]*章[\s　]+/, '节': /[\s　]*节[\s　]+/, ... }
-    // 用途：检测特定章节标识符前后的空格
+###  // ==== 4. 数字转换系统 ====
+   * NumberConverter 对象说明：
+   * 独立的中文数字转换器，封装所有数字相关逻辑。
+#### 中文数字映射表：
+
+    // 小写数字
+    '零':0, '〇':0, // 零的两种写法
+    '一':1, '二':2, '两':2, // 『两』作为『二』的替代
+    '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9,
     
-    spaceCheck: {},
-    // 标点检测正则（预编译）
+    // 单位数字
+    '十':10, '百':100, '千':1000, '万':10000,
     
-    // 功能：匹配标题末尾的标点符号
-    // 示例：'内容！' → 匹配'！'
-    punctuation: /[。！？.]+$/,
+    // 大写数字（财务用）
+    '壹':1, '贰':2, '叁':3, '肆':4, '伍':5, 
+    '陆':6, '柒':7, '捌':8, '玖':9,
+    '拾':10, '佰':100, '仟':1000, '萬':10000,
     
-    // 中文标点检测正则（预编译）
-    // 功能：识别中文标点符号
-    // 示例：'：内容' → 匹配'：'
-    chinesePunctuation: /^[：、，；？！（）「」【】]/,
+    // 繁体数字
+    '貳':2, '參':3, '陸':6
+  
+  const NumberConverter = {
+  
+    map: { /* 如上所示 */ },
     
-    // 主匹配正则（预编译）
-    // 功能：提取中文数字标题的各个部分
-    // 示例：'第貳佰章 内容' → ['貳佰', '章', ' 内容']
-    chapterPattern: /^第([零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/,
+    /*
+     * 方法：convert
+     * 功能：将中文数字转换为阿拉伯数字
+     * 参数：chineseNum - 中文字符串
+     * 返回：Number 转换结果
+     */
+    convert: function(chineseNum) {
+      let total = 0;
+      let temp = 0;
+      
+      for (let i = 0; i < chineseNum.length; i++) {
+        let char = chineseNum[i];
+        let val = this.map[char];
+        
+        if ([10, 100, 1000, 10000].includes(val)) {
+          temp = (temp === 0 ? 1 : temp) * val;
+          total += temp;
+          temp = 0;
+        }
+        else if (val !== undefined) {
+          temp += val;
+        }
+      }
+      
+      return total + temp;
+    }
+  };
+
+###  // ==== 5. 主处理函数 ====
+   * 函数：processTitle
+   * 功能：处理标题转换的主逻辑
+   * 参数：title - 原始标题
+   * 返回：处理后的标题
+#### 处理流程：
+
+    1. 纯数字标题处理 → 转换为章节格式
+    2. 非章节标题处理 → 移除句号（如配置）
+    3. 全局标点处理 → 移除末尾标点（如配置）
+    4. 正则匹配标题各部分 → 提取中文数字、标识符和内容
+    5. 数字转换 → 调用NumberConverter
+    6. 零值特殊处理 → 转换为序章（如配置）
+    7. 智能空格处理 → 自动添加空格（如配置）
+    8. 结果组装 → 生成最终标题
+  
+  function processTitle(title) {
+    // 纯数字标题处理
+    const digitalMatch = title.match(Regex.patterns.digitalChapter);
+    if (digitalMatch) {
+      const [, num, content] = digitalMatch;
+      const trimmedContent = content.trim();
+      
+      if (trimmedContent === '') {
+        return `第${num}${Config.defaultSuffix}`;
+      }
+      
+      return `第${num}${Config.defaultSuffix} ${trimmedContent}`;
+    }
+
+    // 非章节标题处理
+    if (!title.startsWith("第")) {
+      if (Config.removePeriods) {
+        return title.replace(Regex.patterns.period, '');
+      }
+      return title;
+    }
     
-    // 所有标题标点检测（增强）
-    // 功能：全局处理所有标题的末尾标点（包括非章节标题）
-    // 示例：'请假条。' → 匹配'。'
-    allTitlePunctuation: /[。！？.，：；]+$/
+    // 全局标点处理
+    if (Config.removePunctuation) {
+      title = title.replace(Regex.patterns.titlePunctuation, '');
+    }
+    
+    // 正则匹配标题各部分
+    const match = title.match(Regex.patterns.chapter);
+    if (!match) return title;
+    
+    // 提取匹配组
+    const [, chineseNum, originalSuffix, titlePart] = match;
+    let suffix = originalSuffix || Config.defaultSuffix;
+    const cleanTitlePart = (titlePart || '').trim();
+    
+    // 中文数字转换
+    let number = NumberConverter.convert(chineseNum);
+    
+    // 零值特殊处理
+    if (number === 0 && Config.convertZeroToPreface) {
+      number = '';
+      suffix = '序' + suffix;
+    }
+    
+    // 智能空格处理
+    let hasSpace = Config.autoAddSpace 
+      ? /[\s　]/.test(title.slice(match[0].length - (originalSuffix || Config.defaultSuffix).length - 1))
+      : true;
+    
+    // 结果组装
+    if (cleanTitlePart) {
+      const shouldAddSpace = Config.autoAddSpace && 
+                           !hasSpace && 
+                           !Regex.patterns.chinesePunctuation.test(cleanTitlePart);
+      return `第${number}${suffix}${shouldAddSpace ? ' ' : ''}${cleanTitlePart}`;
+    }
+    
+    return `第${number}${suffix}`;
   }
-
-   * 函数：getSpaceRegex
-   * 功能：获取或创建空格检测正则表达式（带缓存）
-   * 参数：suffix - 章节标识符（如'章'/'节'）
-   * 返回：预编译的正则对象
-    
-   * 算法说明：
-    
-    1. 检查缓存中是否已存在该标识符的正则
-       - 是 → 返回缓存结果
-       - 否 → 继续步骤2
-          
-    2. 检查缓存是否已达上限
-       - 是 → 随机移除一个条目
-          
-    3. 创建新正则表达式
-       - 模式：/[\\s　]*${suffix}[\\s　]+/
-          
-    4. 将新正则存入缓存
-    
-    5. 返回新正则
-     
-   * 使用示例：
-    
-    getSpaceRegex('章') → /[\s　]*章[\s　]+/
-
-    getSpaceRegex('回') → /[\s　]*回[\s　]+/
 ##  /*==== 版本更新日志 ====*/
    * 
    * [v1.0] 第一初版 - 基础功能
