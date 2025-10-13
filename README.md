@@ -1,6 +1,6 @@
 # #01 数字标题#JS
 [![Channel](https://img.shields.io/badge/Telegram-Channel-blue?style=flat-square&logo=telegram)](https://t.me/sjshb_2157)
-###   * 作者：sjshb
+###   * 作者：sjshb57
 ###  // ==== 1. 功能文档 ====
 * 功能概述：
    
