@@ -522,4 +522,4 @@ function processTitle(title) {
 - [v2.7.0] 第二十八次修改 - 优化代码
   - 移除部分冗余代码，删除三项配置项
   - 新增 punctuationsToRemove配置项
-  - 可配置标点字符集非硬编码方便修改
+  - 配置标点字符集非硬编码并统一管理
