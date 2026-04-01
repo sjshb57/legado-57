@@ -124,20 +124,7 @@
     convertZeroToPreface: false,    // 是否将零转换为序
     
     defaultSuffix: '章',            // 无标识符时的默认后缀
-
-```javascript
-const escaped = Config.punctuationsToRemove.replace(/[-\]\^]/g, '\\$&');
-const Regex = {
-  patterns: {
-    chinesePunctuation: /^[：、，；？！（）「」【】]/,
-    chapter: /^第(\d+|[零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/,
-    digitalChapter: /^(\d+)\s*(.*)/,
-    titlePunctuation: new RegExp('[' + escaped + ']+$'),
-    allPunctuations: new RegExp('[' + escaped + ']', 'g'),
-    leadingPunctuations: new RegExp('^[\\s' + escaped + ']+')
   }
-};
-```
 
 ###  // ==== 3. 正则表达式系统 ====
    * Regex 对象说明：
@@ -188,8 +175,20 @@ const Regex = {
    *   用途：清理内容前导杂符
    *   示例：
    *     『，内容』 → 匹配『，』
-    
-  };
+
+```javascript
+const escaped = Config.punctuationsToRemove.replace(/[-\]\^]/g, '\\$&');
+const Regex = {
+  patterns: {
+    chinesePunctuation: /^[：、，；？！（）「」【】]/,
+    chapter: /^第(\d+|[零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/,
+    digitalChapter: /^(\d+)\s*(.*)/,
+    titlePunctuation: new RegExp('[' + escaped + ']+$'),
+    allPunctuations: new RegExp('[' + escaped + ']', 'g'),
+    leadingPunctuations: new RegExp('^[\\s' + escaped + ']+')
+  }
+};
+```
 
 ###  // ==== 4. 数字转换系统 ====
    * NumberConverter 对象说明：
