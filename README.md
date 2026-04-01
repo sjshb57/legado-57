@@ -516,10 +516,10 @@ function processTitle(title) {
 
 - [v2.6.0] 第二十七次修改 - 优化代码
   - 修正错误，并删除大量冗余注释示例
-  - 删除冗余代码，移除hasSpace逻辑
+  - 删除冗余代码，移除 hasSpace 逻辑
   - 修复当数字标题时无法触发规则问题
   - 修复标题部分标点无法正常移除问题
 - [v2.6.4] 第二十八次修改 - 优化代码
   - 移除部分冗余代码，同并删除配置项
-  - 新增punctuationsToRemove配置项
+  - 新增 punctuationsToRemove配置项
   - 可配置标点字符集非硬编码方便修改
