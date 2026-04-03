@@ -41,7 +41,7 @@
 ```
 『第零回 内容』 → 『序回 内容』（convertZeroToPreface=true时）
 『第〇章 空白』 → 『第0章 空白』（convertZeroToPreface=false时）
-『第一章标题』 → 『第1篇 标题』（defaultSuffix='篇'，强制覆盖）
+『第一章 标题』 → 『第1篇 标题』（defaultSuffix='篇'，且强制覆盖）
 ```
 
 **空格与标点规范**
@@ -89,7 +89,7 @@
 ```
 
 - **convertZeroToPreface** - 零值特殊处理
-  - boolean：是否将第零章/第零回等转换为序章/序回
+  - boolean：将第零章/第零回等转换为序章/序回
     - `true`：将『第零章』转换为『序章』（默认 false）
     - `false`：保持『第0章』格式
 
@@ -137,7 +137,7 @@ Config.defaultSuffix = '篇';
 const Config = {
   punctuationsToRemove: '.。,，', // 需要统一删除的标点字符集
   convertZeroToPreface: false,    // 是否将零转换为序
-  defaultSuffix: '章',            // 统一章节后缀（强制覆盖原有标识符）
+  defaultSuffix: '章',            // 统一章节后缀（覆盖原有标识符）
 };
 ```
 
@@ -309,7 +309,7 @@ const NumberConverter = {
 
 #### 处理流程：
 
-0. 剥离重复章节名 → 移除「1.第1章」式的章节序号
+0. 剥离重复章节名 → 移除「1.第1章」式的重复章节序号
 1. 统一标点预处理 → 按标题类型执行不同范围的标点清理
 2. 纯数字标题处理 → 清理前导标点，转换为章节格式
 3. 非章节标题处理 → 直接返回（标点已在步骤1清理）
