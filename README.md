@@ -322,8 +322,8 @@ const NumberConverter = {
 function processTitle(title) {
 
   // 剥离冗余数字序号
-  title = title.replace(/^\d+[.]\s*/, '');
-  title = title.replace(/(第\d+[章节回集卷部篇话讲段])\s*\d+[.]\s*/, '$1 ');
+  title = title.replace(/^\d+[.．]\s*(?=第)/, '');
+  title = title.replace(/(第\d+[章节回集卷部篇话讲段])\s*\d+[.．、]?\s*(?=\D)/, '$1 ');
 
   // 统一标点预处理
   if (title.startsWith('第')) {
