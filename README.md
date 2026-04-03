@@ -41,7 +41,7 @@
 ```
 『第零回 内容』 → 『序回 内容』（convertZeroToPreface=true时）
 『第〇章 空白』 → 『第0章 空白』（convertZeroToPreface=false时）
-『第一百标题』  → 『第100章 标题』（无标识符自动补defaultSuffix）
+『第一章标题』 → 『第1篇 标题』（defaultSuffix='篇'时替换，无标识符时进行补全）
 ```
 
 **空格与标点规范**
@@ -78,7 +78,7 @@
 #### 完整配置选项说明：
 
 - **punctuationsToRemove** - 需要统一删除的标点字符集
-  - 字符串：作为正则字符类使用，在 processTitle 入口处统一预处理，覆盖所有标题类型（默认 `'.。,，'`）
+  - string：作为正则字符类使用，在 processTitle 入口处统一预处理，覆盖所有标题类型（默认 `'.。,，'`）
   - 影响范围：
     - 以『第』开头的章节标题：仅清理末尾连续标点（保留正文内容）
     - 纯数字标题：清理数字与内容之间的前导标点
@@ -89,18 +89,19 @@
 ```
 
 - **convertZeroToPreface** - 零值特殊处理
-  - `true`：将『第零章』转换为『序章』（默认 false）
-  - `false`：保持『第0章』格式
+  - boolean：是否将第零章/第零回等转换为序章/序回
+    - `true`：将『第零章』转换为『序章』（默认 false）
+    - `false`：保持『第0章』格式
 
 ```
   示例：『第零回』 → 『序回』（true 时）
 ```
 
-- **defaultSuffix** - 无标识符时的默认后缀
-  - 字符串：当标题无章节标识符时使用的默认后缀（默认『章』）
+- **defaultSuffix** - 统一章节标识符默认后缀
+  - string：所有标题统一使用的章节后缀，无论原标题是否含标识符均强制覆盖（默认『章』）
 
 ```
-  示例：『第一百标题』 → 『第100章 标题』  
+  示例：『第一百标题』 → 『第100章 标题』
   设置为『篇』时：→ 『第100篇 标题』
 ```
 
@@ -136,7 +137,7 @@ Config.defaultSuffix = '篇';
 const Config = {
   punctuationsToRemove: '.。,，', // 需要统一删除的标点字符集
   convertZeroToPreface: false,    // 是否将零转换为序
-  defaultSuffix: '章',            // 无标识符时的默认后缀
+  defaultSuffix: '章',            // 统一章节后缀（强制覆盖原有标识符）
 };
 ```
 
@@ -308,6 +309,7 @@ const NumberConverter = {
 
 #### 处理流程：
 
+0. 剥离重复章节名 → 移除「1.第1章」式的章节序号
 1. 统一标点预处理 → 按标题类型执行不同范围的标点清理
 2. 纯数字标题处理 → 清理前导标点，转换为章节格式
 3. 非章节标题处理 → 直接返回（标点已在步骤1清理）
@@ -318,6 +320,10 @@ const NumberConverter = {
 
 ```javascript
 function processTitle(title) {
+
+  // 剥离冗余数字序号
+  title = title.replace(/^\d+[.]\s*/, '');
+  title = title.replace(/(第\d+[章节回集卷部篇话讲段])\s*\d+[.]\s*/, '$1 ');
 
   // 统一标点预处理
   if (title.startsWith('第')) {
@@ -348,7 +354,7 @@ function processTitle(title) {
 
   // 提取匹配组
   const [, chineseNum, originalSuffix, titlePart] = match;
-  let suffix = originalSuffix || Config.defaultSuffix;
+  let suffix = Config.defaultSuffix;
   const cleanTitlePart = (titlePart || '').replace(Regex.patterns.leadingPunctuations, '').trim();
 
   // 中文/阿拉伯数字转换
@@ -519,7 +525,13 @@ function processTitle(title) {
   - 删除冗余代码，移除 hasSpace 逻辑
   - 修复当数字标题时无法触发规则问题
   - 修复标题部分标点无法正常移除问题
+
 - [v2.7.0] 第二十八次修改 - 优化代码
   - 删除部分冗余代码，移除三项配置项
   - 新增 punctuationsToRemove配置项
   - 配置标点字符集非硬编码并统一管理
+
+- [v2.8.0] 第二十八次修改 - 优化代码
+  - 新增步骤0，用以应对『第一章 1.标题』此类格式
+  - defaultSuffix不再仅管理无标识符后缀，现在可以作为更改章节后缀标识使用
+  - 
