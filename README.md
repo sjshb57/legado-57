@@ -41,7 +41,7 @@
 ```
 『第零回 内容』 → 『序回 内容』（convertZeroToPreface=true时）
 『第〇章 空白』 → 『第0章 空白』（convertZeroToPreface=false时）
-『第一章标题』 → 『第1篇 标题』（defaultSuffix强制覆盖）
+『第一章标题』 → 『第1篇 标题』（defaultSuffix='篇'，强制覆盖）
 ```
 
 **空格与标点规范**
