@@ -13,15 +13,15 @@
 
 ```
 1. 全面支持简繁体中文数字转换（零-萬）
-2. 支持繁体大写数字（壹貳參等）
-3. 智能空格处理（自动补全章节号与内容间的空格）
-4. 标点符号统一清理（入口处集中处理，覆盖所有标题类型）
-5. 非章节标题标点清理（『请，假。』→『请假』）
-6. 特殊章节处理（『第零章』→『序章』）
-7. 支持纯数字标题转换（『1 内容』→『第1章 内容』）
-8. 无标识符标题兼容（『第一百标题』→『第100章 标题』）
-9. 多章节标识符适配（章/节/回/集等）
-10. 灵活的配置系统（可自定义删除的标点字符集、默认章节后缀等）
+2. 智能空格处理（自动补全章节号与内容间的空格）
+3. 标点符号统一清理（入口处集中处理，覆盖所有标题类型）
+4. 非章节标题标点清理（『请，假。』→『请假』）
+5. 特殊章节处理（『第零章』→『序章』）
+6. 支持纯数字标题转换（『1 内容』→『第1章 内容』）
+7. 无标识符标题兼容（『第一百标题』→『第100章 标题』）
+8. 多章节标识符适配（章/节/回/集等）
+9. 灵活的配置系统（可自定义删除的标点字符集、默认章节后缀等）
+10. 标识符白名单保护（指定标识符不被 defaultSuffix 覆盖）
 ```
 
 #### 典型输入输出示例（五大类）：
@@ -105,6 +105,17 @@
   设置为『篇』时：→ 『第100篇 标题』
 ```
 
+- **preserveSuffixes** - 标识符白名单
+  - string：字符串中每个字符均视为一个受保护的标识符，白名单内的标识符原样保留，不被 defaultSuffix 覆盖（默认 `'卷'`）
+  - 设为空字符串时，所有标识符均跟随 defaultSuffix 替换
+
+```
+  示例：preserveSuffixes='卷' 时
+    『第二卷』   → 『第2卷』（卷在白名单，保留）
+    『第二节』   → 『第2章』（节不在白名单，用 defaultSuffix）
+  多个标识符：preserveSuffixes='卷节' → 卷和节均保留
+```
+
 #### 配置示例：
 
 ```javascript
@@ -120,17 +131,9 @@ Config.convertZeroToPreface = true;
 Config.defaultSuffix = '节';
 // 结果示例：『第一百标题』 → 『第100节 标题』
 
-// 复杂配置示例1
-Config.punctuationsToRemove = '.。';
-Config.convertZeroToPreface = true;
-Config.defaultSuffix = '回';
-// 结果示例：『第零回内容，』 → 『序回 内容，』
-
-// 复杂配置示例2
-Config.punctuationsToRemove = '';
-Config.convertZeroToPreface = false;
-Config.defaultSuffix = '篇';
-// 结果示例：『第壹佰贰拾叁内容。』 → 『第123篇 内容。』
+// 设置标识符白名单（卷和节不被替换）
+Config.preserveSuffixes = '卷节';
+// 结果示例：『第二卷』 → 『第2卷』，『第三节』 → 『第3节』，『第四回』 → 『第4章』
 ```
 
 ```javascript
@@ -138,6 +141,7 @@ const Config = {
   punctuationsToRemove: '.。,，', // 需要统一删除的标点字符集
   convertZeroToPreface: false,    // 是否将零转换为序
   defaultSuffix: '章',            // 统一章节后缀（覆盖原有标识符）
+  preserveSuffixes: '卷',         // 保护标识符不被 defaultSuffix 覆盖
 };
 ```
 
@@ -322,7 +326,7 @@ const NumberConverter = {
 function processTitle(title) {
 
   // 剥离冗余数字序号
-  title = title.replace(/^\d+[.．]\s*(?=第)/, '');
+  title = title.replace(/^\\d+[.．]\\s*(?=第\\S+[章节回集卷部篇话讲段])/, '');
   title = title.replace(/(第\d+[章节回集卷部篇话讲段])\s*\d+[.．、]?\s*(?=\D)/, '$1 ');
 
   // 统一标点预处理
@@ -354,7 +358,16 @@ function processTitle(title) {
 
   // 提取匹配组
   const [, chineseNum, originalSuffix, titlePart] = match;
-  let suffix = Config.defaultSuffix;
+
+  // 无标识符时，若紧跟季/年/月/日/周/天/期等词，原样返回（避免误匹配）
+  if (!originalSuffix && /^[季年月日周天期]/.test((titlePart || '').trimStart())) {
+    return title;
+  }
+
+  // 白名单内的标识符原样保留，其余用 defaultSuffix
+  let suffix = (originalSuffix && Config.preserveSuffixes.includes(originalSuffix))
+    ? originalSuffix
+    : Config.defaultSuffix;
   const cleanTitlePart = (titlePart || '').replace(Regex.patterns.leadingPunctuations, '').trim();
 
   // 中文/阿拉伯数字转换
@@ -534,4 +547,10 @@ function processTitle(title) {
 - [v2.8.0] 第二十九次修改 - 优化代码
   - 新增步骤0，用以应对『第一章 1.标题』此类格式
   - defaultSuffix不再仅管理无标识符类型后缀，现在可以作为强制更改章节后缀标识
+
+- [v2.8.1] 第三十次修改 - 优化代码
+  - 修复『第二季BD特典』被错误替换为『第2章 季BD特典』的问题
+  - 无标识符时，若紧跟季/年/月/日/周/天/期等词，原样返回不做替换
+  - 新增 preserveSuffixes：指定标识符白名单，白名单内的标识符不被 defaultSuffix 覆盖
+  - 设为空字符串时行为与原来完全一致
   - 
