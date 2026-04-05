@@ -313,7 +313,6 @@ const NumberConverter = {
 
 #### 处理流程：
 
-0. 剥离重复章节名 → 移除「1.第1章」式的重复章节序号
 1. 统一标点预处理 → 按标题类型执行不同范围的标点清理
 2. 纯数字标题处理 → 清理前导标点，转换为章节格式
 3. 非章节标题处理 → 直接返回（标点已在步骤1清理）
@@ -324,10 +323,6 @@ const NumberConverter = {
 
 ```javascript
 function processTitle(title) {
-
-  // 剥离冗余数字序号
-  title = title.replace(/^\\d+[.．]\\s*(?=第\\S+[章节回集卷部篇话讲段])/, '');
-  title = title.replace(/(第\d+[章节回集卷部篇话讲段])\s*\d+[.．、]?\s*(?=\D)/, '$1 ');
 
   // 统一标点预处理
   if (title.startsWith('第')) {
