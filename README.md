@@ -71,8 +71,8 @@
 **括号内容处理**
 
 ```
-『第1章（上）内容』      → 『第1章 (上) 内容』（非黑名单，转为半角格式）
-『第1章内容（已更新）』  → 『第1章内容』（命中黑名单字符'章'/'更'，整体删除）
+『第1章（上）内容』      → 『第1章 (上) 内容』（非黑名单，转为半角格式，两侧补空格）
+『第1章内容（已更新）』  → 『第1章内容』（命中黑名单字符'更'，整体删除）
 『第2章（上』           → 『第2章 (上)』（未闭合且非黑名单，补右括号转半角）
 ```
 
@@ -87,10 +87,7 @@
 
 - **punctuationsToRemove** - 需要统一删除的标点字符集
   - string：作为正则字符类使用，在 processTitle 入口处统一预处理，覆盖所有标题类型（默认 `'.。,，'`）
-  - 影响范围：
-    - 以『第』开头的章节标题：仅清理末尾连续标点（保留正文内容）
-    - 纯数字标题：清理数字与内容之间的前导标点
-    - 其他标题：移除全文中所有指定标点
+  - 影响范围：一次性全文删除，覆盖所有标题类型、所有位置
 
 ```
   示例：`'.。,，'` → 删除英文句点、中文句号、英文逗号、中文逗号
@@ -114,12 +111,14 @@
 ```
 
 - **preserveSuffixes** - 标识符白名单
-  - string：字符串中每个字符均视为一个受保护的标识符，白名单内的标识符原样保留，不被 defaultSuffix 覆盖（默认 `'卷'`）
+  - string：字符串中每个字符均视为一个受保护的标识符，白名单内的标识符原样保留，不被 defaultSuffix 覆盖（默认 `'卷次'`）
   - 设为空字符串时，所有标识符均跟随 defaultSuffix 替换
+  - 这些字符会被动态合并到主正则的标识符字符类中以确保正确捕获
 
 ```
-  示例：preserveSuffixes='卷' 时
+  示例：preserveSuffixes='卷次' 时
     『第二卷』   → 『第2卷』（卷在白名单，保留）
+    『第三次』   → 『第3次』（次在白名单，保留）
     『第二节』   → 『第2章』（节不在白名单，用 defaultSuffix）
   多个标识符：preserveSuffixes='卷节' → 卷和节均保留
 ```
@@ -149,7 +148,7 @@ const Config = {
   punctuationsToRemove: '.。,，', // 需要统一删除的标点字符集
   convertZeroToPreface: false,    // 是否将零转换为序
   defaultSuffix: '章',            // 统一章节后缀（覆盖原有标识符）
-  preserveSuffixes: '卷',         // 保护标识符不被 defaultSuffix 覆盖
+  preserveSuffixes: '卷次',       // 保护标识符不被 defaultSuffix 覆盖
 };
 ```
 
@@ -158,13 +157,14 @@ const Config = {
 ## // ==== 3. 正则表达式系统 ====
 
 - Regex 对象说明：
-- 封装所有预编译正则表达式，其中标点相关的三条正则均根据 Config.punctuationsToRemove 动态构建。
+- 封装所有预编译正则表达式，其中标点相关的正则均根据 Config.punctuationsToRemove 动态构建。
+- chapter 的标识符字符类由默认标识符 + preserveSuffixes 动态合并，确保白名单字符（如「次」）能被正确捕获。
 
 #### 预编译的正则表达式列表：
 
-1. **chinesePunctuation** - 中文标点检测（匹配：、，；等）
-   - 模式：`/^[：、，；？！（）「」【】]/`
-   - 用途：防止在中文标点前添加空格
+1. **chinesePunctuation** - 中文标点检测
+   - 模式：`/^[：、；？！。…]/`
+   - 用途：防止在中文标点前添加空格（不含括号，括号内容经步骤0转半角后需自动补空格）
 ```
    - 示例：
      - 『：内容』 → 匹配『：』
@@ -172,16 +172,16 @@ const Config = {
 ```
 
 2. **chapter** - 主匹配模式（识别中文数字标题）
-   - 完整模式：`/^第(\d+|[零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/`
+   - 完整模式：由默认标识符字符类 + preserveSuffixes 动态构建
    - 分组说明：
      - 第1组：章节数字，优先匹配阿拉伯数字，其次匹配中文数字（支持简繁体及财务大写）
-     - 第2组 `([章节回集卷部篇话讲段]?)`：章节标识符（可选）
+     - 第2组 `([章节回集卷部篇话讲段...]?)`：章节标识符（可选，含白名单字符）
      - 第3组 `(.*)`：标题内容
 ```
    - 示例：
-     - 『第1章 内容』          → `['1', '章', ' 内容']`
-     - 『第壹佰贰拾叁节 内容』  → `['壹佰贰拾叁', '节', ' 内容']`
-     - 『第一百标题』           → `['一百', '', '标题']`
+     - 『第1章 内容』          → ['1', '章', ' 内容']
+     - 『第壹佰贰拾叁节 内容』  → ['壹佰贰拾叁', '节', ' 内容']
+     - 『第一百标题』           → ['一百', '', '标题']
 ```
 
 3. **digitalChapter** - 数字标题匹配模式
@@ -192,27 +192,19 @@ const Config = {
    - 用途：处理纯数字标题
 ```
    - 示例：
-     - 『123 内容』 → `['123', '内容']`
-     - 『456测试』  → `['456', '测试']`
+     - 『123 内容』 → ['123', '内容']
+     - 『456测试』  → ['456', '测试']
 ```
 
-4. **titlePunctuation** - 动态生成，匹配标题末尾连续指定标点
-   - 用途：「第」开头标题的末尾清理
-```
-   - 示例（默认 `'.。,，'`）：
-     - 『内容。』 → 匹配『。』
-     - 『标题，』 → 匹配『，』
-```
-
-5. **allPunctuations** - 动态生成（global flag），匹配全文所有指定标点
-   - 用途：非章节标题的全文清理
+4. **allPunctuations** - 动态生成（global flag），匹配全文所有指定标点
+   - 用途：入口处一次性全文清理
 ```
    - 示例：
      - 『内容。』 → 匹配『。』
      - 『标题.』  → 匹配『.』
 ```
 
-6. **leadingPunctuations** - 动态生成，匹配开头连续的空白及指定标点
+5. **leadingPunctuations** - 动态生成，匹配开头连续的空白及指定标点
    - 用途：清理内容前导杂符
 ```
    - 示例：
@@ -223,10 +215,9 @@ const Config = {
 const escaped = Config.punctuationsToRemove.replace(/[-\]\^]/g, '\\$&');
 const Regex = {
   patterns: {
-    chinesePunctuation: /^[：、，；？！（）「」【】]/,
-    chapter: /^第(\d+|[零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([章节回集卷部篇话讲段]?)(.*)/,
+    chinesePunctuation: /^[：、；？！。…]/,
+    chapter: new RegExp('^第(\\d+|[零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([' + suffixCharClass + ']?)(.*)'),
     digitalChapter: /^(\d+)\s*(.*)/,
-    titlePunctuation: new RegExp('[' + escaped + ']+$'),
     allPunctuations: new RegExp('[' + escaped + ']', 'g'),
     leadingPunctuations: new RegExp('^[\\s' + escaped + ']+')
   }
@@ -321,8 +312,8 @@ const NumberConverter = {
 
 #### 处理流程：
 
-0. 括号内容处理 → 黑名单字符命中时整体删除，其余括号内容转为半角格式保留（未闭合括号自动补右括号）
-1. 统一标点预处理 → 按标题类型执行不同范围的标点清理
+0. 括号内容处理 → 黑名单字符命中时整体删除，其余括号内容转为半角格式并两侧补空格（未闭合括号自动补右括号）
+1. 统一标点预处理 → 一次性全文删除 punctuationsToRemove 中的标点
 2. 纯数字标题处理 → 清理前导标点，转换为章节格式
 3. 非章节标题处理 → 直接返回（标点已在步骤1清理）
 4. 正则匹配标题各部分 → 提取数字、标识符和内容
@@ -333,28 +324,28 @@ const NumberConverter = {
 ```javascript
 function processTitle(title) {
 
-  // 括号内容处理
+  // 括号内容处理（拆为两步：0a闭合/0b未闭合，避免 g+$ 回溯问题）
   // 黑名单：含以下字符的括号内容整体删除：票更快祝新迎章订架求免
-  // 闭合/未闭合括号统一处理：命中黑名单则整体删除，其余内容转为半角格式保留
+  // 其余内容转为半角格式并两侧补空格，未闭合括号自动补右括号
   const bracketBlacklist = /[票更快祝新迎章订架求免]/;
-  title = title.replace(/[（(]([^）)]*)[）)]|[（(]([^）)]*)$/g, (_, closed, open) => {
-    const inner = closed ?? open;
+  title = title.replace(/[（(]([^）)]*)[）)]/g, (_, inner) => {
+    return bracketBlacklist.test(inner) ? '' : ' (' + inner + ') ';
+  });
+  title = title.replace(/[（(]([^）)]*)$/, (_, inner) => {
     return bracketBlacklist.test(inner) ? '' : ' (' + inner + ')';
   });
+  title = title.replace(/ {2,}/g, ' ').replace(/^ +| +$/g, '');
+  const stripped = title.replace(/^[\d.]+/, '').trim();
+  if (stripped && title.match(/^\d+\.\d/)) return stripped;
 
-  // 统一标点预处理
-  if (title.startsWith('第')) {
-    title = title.replace(Regex.patterns.titlePunctuation, '');
-  } else if (!Regex.patterns.digitalChapter.test(title)) {
-    title = title.replace(Regex.patterns.allPunctuations, '');
-  }
+  // 统一标点预处理（一次性全文删除）
+  title = title.replace(Regex.patterns.allPunctuations, '');
 
   // 纯数字标题处理
   const digitalMatch = title.match(Regex.patterns.digitalChapter);
   if (digitalMatch) {
     const [, num, content] = digitalMatch;
-    const cleanedContent = content.replace(Regex.patterns.leadingPunctuations, '').trim();
-
+    const cleanedContent = content.trim();
     return cleanedContent ?
       `第${num}${Config.defaultSuffix} ${cleanedContent}` :
       `第${num}${Config.defaultSuffix}`;
@@ -381,7 +372,7 @@ function processTitle(title) {
   let suffix = (originalSuffix && Config.preserveSuffixes.includes(originalSuffix))
     ? originalSuffix
     : Config.defaultSuffix;
-  const cleanTitlePart = (titlePart || '').replace(Regex.patterns.leadingPunctuations, '').trim();
+  const cleanTitlePart = (titlePart || '').trim();
 
   // 中文/阿拉伯数字转换
   let number = /^\d+$/.test(chineseNum) ? chineseNum : NumberConverter.convert(chineseNum);
@@ -573,7 +564,8 @@ function processTitle(title) {
 
 - [v2.8.3] 第三十二次修改 - 优化代码
   - 优化步骤0逻辑，改用黑名单而非白名单：含有限定字符（票更快祝新迎章订架求免）的括号内容随整体删除，降低误删概率，其余转为半角格式
+
 - [v2.8.4] 第三十三次修改 - 优化代码
-  - 修复8.29 请假条错误替换成第 8 章 29 请假条 的问题
+  - 修复8.29 请假条错误替换成第 8 章 29 请假条 的问题
   - 标点清理改为入口处一次性全文删除，不再按标题类型分批处理
   - 
