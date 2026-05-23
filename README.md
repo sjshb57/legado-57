@@ -636,4 +636,12 @@ function processTitle(title) {
   * 修复注释过长造成的Rhino截断执行
   * 优化步骤0逻辑策略，修复回溯问题
   * 修复索引字符串异常，使用charAt(i)
-  * 
+  
+- [v2.8.6] 第三十五次修改 - 优化代码
+
+  * 新增 assemble() 统一组装函数
+  * 删除 chinesePunctuation 函数
+  * 修复部分类型标题被错误解析的问题
+  * 优化部分代码，修复历史部分功能失效问题
+  * 修复 extraSuffixes 拼接缺少字符转义的问题
+  *
