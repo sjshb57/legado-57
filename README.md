@@ -724,9 +724,9 @@ function processTitle(title) {
 
 - [v2.8.7] 第三十六次修改 - 优化代码
 
-  * 新增 digitalTimeUnit 日期护栏
   * 修复部分标题被错误替换的问题
   * 标点章节标题只清衔接处与末尾
+  * 新增 digitalTimeUnit 日期护栏
   * 步骤5 改用 assemble() 统一组装
   * 恢复 chinesePunctuation 部分判断
   * 
