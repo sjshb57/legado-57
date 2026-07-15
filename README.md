@@ -726,7 +726,7 @@ function processTitle(title) {
 
   * 修复部分标题被错误替换的问题
   * 标点章节标题只清衔接处与末尾
-  * 新增 digitalTimeUnit 日期护栏
+  * 新增 digitalTimeUnit 日期护栏
   * 步骤5 改用 assemble() 统一组装
   * 恢复 chinesePunctuation 部分判断
   * 
