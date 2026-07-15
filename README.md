@@ -14,12 +14,12 @@
 
 ```
 1. 全面支持简繁体中文数字转换（零-萬）
-2. 智能空格处理（自动补全章节号与内容间的空格，全角空格统一转半角，章节号与标题间半角标点自动转全角）
-3. 标点符号统一清理（入口处集中处理，覆盖所有标题类型）
+2. 智能空格处理（自动补全章节号与内容间的空格，全角空格统一转半角，章节号与标题间半角标点自动转全角，中文标点前不补空格）
+3. 标点符号清理（章节标题只清衔接处与末尾，标题内标点原样保留；非章节标题全文删除）
 4. 特殊章节处理（『第零章』→『序章』）
 5. 纯数字标题转换（『1 内容』→『第1章 内容』）
 6. 数字+标识符标题转换（『29章 标题』→『第29章 标题』）
-7. 日期/编号前缀剥离（『8.29 请假条』→『请假条』）
+7. 日期/编号前缀剥离（『8.29 请假条』→『请假条』；『4月抽奖活动』等数字紧邻时间词不替换）
 8. 无标识符标题兼容（『第一百标题』→『第100章 标题』）
 9. 多章节标识符适配与白名单保护（章/节/回/集等，白名单内标识符不被覆盖）
 10. 括号内容清理（非黑名单内容保留并转为半角格式，黑名单内容整体删除）
@@ -51,8 +51,13 @@
 『第1章内容』   → 『第1章 内容』（无分隔时自动补半角空格）
 『第1章　内容』 → 『第1章 内容』（全角空格转半角）
 『第1章：简介』 → 『第1章：简介』（全角标点原样拼接，不补空格）
+『第1章 ：简介』→ 『第1章：简介』（中文标点前的空格不保留）
 『第1章:简介』  → 『第1章：简介』（半角标点自动转全角）
-『请，假。』    → 『请假』（移除非章节标题中的指定标点）
+『第1章 内容。』→ 『第1章 内容』（末尾标点清理）
+『第1章，内容』 → 『第1章 内容』（衔接处标点清理）
+『第5章 你好，世界』→ 『第5章 你好，世界』（标题内标点原样保留）
+『第319章 ：“不，我们还有另一条路。”』→ 『第319章：“不，我们还有另一条路。”』
+『请，假。』    → 『请假』（非章节标题仍全文删除指定标点）
 ```
 
 **数字+标识符标题**
@@ -80,11 +85,20 @@
 『12.3 测试』   → 『测试』
 ```
 
+**数字紧邻时间词（不替换）**
+
+```
+『4月抽奖活动+月票番外』   → 原样返回（4 紧邻『月』，视为日期）
+『6月月票抽奖活动+月票番外。』 → 『6月月票抽奖活动+月票番外』（仅清理标点，不转章节号）
+『3年后』                 → 原样返回
+『4 月光下』              → 『第4章 月光下』（有空格分隔，仍按章节处理）
+```
+
 **括号内容处理**
 
 ```
 『第1章（上）内容』      → 『第1章 (上) 内容』（非黑名单，转为半角格式，两侧补空格）
-『第1章内容（已更新）』  → 『第1章内容』（命中黑名单字符'更'，整体删除）
+『第1章内容（已更新）』  → 『第1章 内容』（命中黑名单字符'更'，整体删除后补空格）
 『第2章（上』           → 『第2章 (上)』（未闭合且非黑名单，补右括号转半角）
 ```
 
@@ -98,11 +112,11 @@
 #### 完整配置选项说明：
 
 - **punctuationsToRemove** - 需要统一删除的标点字符集
-  * string：作为正则字符类使用，在 processTitle 入口处统一预处理，覆盖所有标题类型（默认 `'.。,，'`）
-  * 影响范围：一次性全文删除，覆盖所有标题类型、所有位置
+  * string：作为正则字符类使用（默认 `'.。,，、'`）
+  * 影响范围：章节标题仅清理章节号与标题的衔接处（前导）及整条标题的末尾，标题内部的标点原样保留；非章节标题（含被日期护栏拦下的标题）一次性全文删除
 
 ```
-示例：'.。,，' → 删除英文句点、中文句号、英文逗号、中文逗号
+示例：'.。,，、' → 删除英文句点、中文句号、英文逗号、中文逗号、中文顿号
 ```
 
 - **convertZeroToPreface** - 零值特殊处理
@@ -157,7 +171,7 @@ Config.preserveSuffixes = '卷节';
 
 ```javascript
 const Config = {
-    punctuationsToRemove: '.。,，', // 需要统一删除的标点字符集
+    punctuationsToRemove: '.。,，、', // 需要统一删除的标点字符集
     convertZeroToPreface: false,    // 是否将零转换为序
     defaultSuffix: '章',            // 统一章节后缀（覆盖原有标识符）
     preserveSuffixes: '卷次',       // 保护标识符不被 defaultSuffix 覆盖
@@ -172,6 +186,9 @@ const Config = {
 - 封装所有预编译正则表达式，避免重复编译，提升性能。
 - 标点相关正则均根据 Config.punctuationsToRemove 动态构建。
 - chapter / digitalChapterWithSuffix 的标识符字符类由 baseSuffixes + preserveSuffixes 动态合并，每个字符单独转义，防止特殊字符破坏正则字符类。
+- digitalTimeUnit 的时间词字符类会剔除已被 allSuffixes 占用的字符，避免与白名单标识符冲突；剔空时置为 null。
+- leadingPunctuations / trailingPunctuations 供 assemble() 清理衔接处与末尾，allPunctuations 仅用于非章节标题的全文删除。
+- halfToFull 是半角→全角标点映射表（`: ! ? , ;`），供 assemble() 在章节号与标题之间做分隔符转换。
 
 #### 预编译的正则表达式列表：
 
@@ -216,11 +233,53 @@ const Config = {
   『456测试』  → ['456', '测试']
 ```
 
-4. **allPunctuations** - 动态生成（global flag），匹配全文所有指定标点
-   - 用途：步骤3入口处一次性全文清理
+4. **digitalTimeUnit** - 数字+时间词匹配模式（日期护栏）
+   - 完整模式：由 timeUnits 动态构建，`/^\d+[季年月日周天期]/`
+   - 用途：步骤5 前置判断，数字**紧邻**时间词的标题视为日期，原样返回
+   - 与 allSuffixes 冲突的字符会被自动剔除；剔空时该模式为 null，护栏自动失效
 
 ```
-示例（默认 '.。,，'）：
+示例：
+  『4月抽奖活动』 → 命中，原样返回
+  『4 月光下』    → 不命中（有空格），按章节处理
+  『60你好世界』  → 不命中，按章节处理
+```
+
+5. **chinesePunctuation** - 中文标点检测
+   - 完整模式：`/^[：、；？！。…]/`
+   - 用途：assemble() 中判定是否为紧贴前文的中文标点，命中则不补空格（不含括号与引号）
+
+```
+示例：
+  『：简介』 → 命中，『第1章：简介』
+  『“引言”』→ 不命中，『第1章 “引言”』
+```
+
+6. **leadingPunctuations** - 动态生成，匹配开头连续的空白及指定标点
+   - 完整模式：`/^[\s.。,，、]+/`
+   - 用途：assemble() 清理章节号与标题衔接处的杂符
+
+```
+示例：
+  『、标题内容』 → 匹配『、』，得『标题内容』
+  『 ：“不…”』  → 仅匹配空格（『：』不在字符集内），得『：“不…”』
+```
+
+7. **trailingPunctuations** - 动态生成，匹配末尾连续的空白及指定标点
+   - 完整模式：`/[\s.。,，、]+$/`
+   - 用途：assemble() 清理整条标题末尾的标点
+
+```
+示例：
+  『内容。』        → 匹配『。』，得『内容』
+  『“另一条路。”』 → 不匹配（末尾是『”』），句号保留
+```
+
+8. **allPunctuations** - 动态生成（global flag），匹配全文所有指定标点
+   - 用途：非章节标题（步骤5 护栏 / 步骤6 / 步骤7 未匹配）的全文清理
+
+```
+示例（默认 '.。,，、'）：
   『内容。』 → 匹配『。』
   『标题.』  → 匹配『.』
 ```
@@ -230,12 +289,18 @@ var escaped = Config.punctuationsToRemove.replace(/[-\]\\\^[\/.*+?()|{}$]/g, '\\
 var baseSuffixes = '章节回集卷部篇话讲段';
 var extraSuffixes = ''; // 由 preserveSuffixes 动态追加，每个字符单独转义
 var allSuffixes = baseSuffixes + extraSuffixes;
+var timeUnitsBase = '季年月日周天期';
+var timeUnits = ''; // 剔除与 allSuffixes 冲突的字符后动态构建
 
 var Regex = {
     patterns: {
         chapter: new RegExp('^第(\\d+|[零〇...萬貳參陸]+)([' + allSuffixes + ']?)(.*)'),
         digitalChapterWithSuffix: new RegExp('^(\\d+)([' + allSuffixes + '])(.*)'),
         digitalChapter: /^(\d+)\s*(.*)/,
+        digitalTimeUnit: timeUnits ? new RegExp('^\\d+[' + timeUnits + ']') : null,
+        chinesePunctuation: /^[：、；？！。…]/,
+        leadingPunctuations: new RegExp('^[\\s' + escaped + ']+'),
+        trailingPunctuations: new RegExp('[\\s' + escaped + ']+$'),
         allPunctuations: new RegExp('[' + escaped + ']', 'g')
     }
 };
@@ -327,10 +392,10 @@ const NumberConverter = {
 ```
 步骤1　括号内容处理　　　→ 黑名单字符命中时整体删除，其余转为半角格式并两侧补空格
 步骤2　前缀剥离　　　　　→ 识别「数字.数字」开头，剥离日期/编号前缀后直接返回
-步骤3　统一标点预处理　　→ 一次性全文删除 punctuationsToRemove 中的标点
+步骤3　统一标点预处理　　→ 预生成 cleaned（全文删除），供非章节标题出口使用
 步骤4　数字+标识符处理 　→ 匹配「29章 请假」等格式，正确识别标识符后组装
-步骤5　纯数字标题处理　　→ 匹配数字开头标题，转换为「第N章 内容」格式
-步骤6　非「第」开头处理　→ 无章节号可转换，直接返回
+步骤5　纯数字标题处理　　→ 数字紧邻时间词则返回 cleaned；否则调用 assemble() 组装
+步骤6　非「第」开头处理　→ 无章节号可转换，返回 cleaned
 步骤7　正则匹配各部分　　→ 提取数字、标识符、内容三部分
 步骤8　数字转换　　　　　→ 阿拉伯数字直接使用，中文数字调用 NumberConverter
 步骤9　零值处理与组装　　→ 零值转序章（如配置），调用 assemble() 组装最终结果
@@ -339,10 +404,13 @@ const NumberConverter = {
 
 **assemble() 分隔策略：**
 
+先用 leadingPunctuations / trailingPunctuations 清理 titlePart 的衔接处与末尾，标题内部标点原样保留，再按优先级判定分隔符：
+
 ```
-半角/全角空格、无分隔、直接是汉字或英文数字 → 补半角空格
-halfToFull 中的半角标点（: ! ? , ; ( )）     → 转换为对应全角标点，直接拼接
-其他符号/全角标点                            → 原样保留，直接拼接
+halfToFull 中的半角标点（: ! ? , ;）  → 转换为对应全角标点，直接拼接
+中文标点（：、；？！。…）            → 原样保留，直接拼接，不补空格
+原有分隔空格、汉字或英文数字         → 补半角空格
+其他符号（括号、引号等）             → 原样保留，直接拼接
 ```
 
 ```javascript
@@ -360,13 +428,14 @@ function processTitle(title) {
     title = title.replace(/ {2,}/g, ' ').replace(/^ +| +$/g, '');
 
     // 步骤2：「数字.数字」前缀剥离
+    // 剥离后无内容（纯日期如「8.29」）则原样返回，不当作章节号处理
     if (/^\d+\.\d/.test(title)) {
         var stripped = title.replace(/^[\d.]+/, '').replace(/^\s+|\s+$/g, '');
-        if (stripped) return stripped.replace(Regex.patterns.allPunctuations, '');
+        return stripped ? stripped.replace(Regex.patterns.allPunctuations, '') : title;
     }
 
-    // 步骤3：统一标点预处理
-    title = title.replace(Regex.patterns.allPunctuations, '');
+    // 步骤3：统一标点预处理（cleaned 仅供非章节标题出口使用）
+    var cleaned = title.replace(Regex.patterns.allPunctuations, '');
 
     // 步骤4：数字+标识符标题处理（须在步骤5纯数字之前）
     var suffixMatch = title.match(Regex.patterns.digitalChapterWithSuffix);
@@ -377,20 +446,20 @@ function processTitle(title) {
     }
 
     // 步骤5：纯数字标题处理
+    if (Regex.patterns.digitalTimeUnit && Regex.patterns.digitalTimeUnit.test(title)) {
+        return cleaned;
+    }
     var digitalMatch = title.match(Regex.patterns.digitalChapter);
     if (digitalMatch) {
-        var cleanedContent = digitalMatch[2].replace(/^\s+|\s+$/g, '');
-        return cleanedContent ?
-            '第' + digitalMatch[1] + Config.defaultSuffix + ' ' + cleanedContent :
-            '第' + digitalMatch[1] + Config.defaultSuffix;
+        return assemble('第' + digitalMatch[1], Config.defaultSuffix, digitalMatch[2]);
     }
 
     // 步骤6：非「第」开头直接返回
-    if (title.charAt(0) !== '第') return title;
+    if (title.charAt(0) !== '第') return cleaned;
 
     // 步骤7：正则匹配「第X章」各部分
     var match = title.match(Regex.patterns.chapter);
-    if (!match) return title;
+    if (!match) return cleaned;
 
     var chineseNum = match[1];
     var originalSuffix = match[2];
@@ -398,7 +467,7 @@ function processTitle(title) {
 
     // 无标识符时，若内容以时间词开头则原样返回，避免误匹配
     if (!originalSuffix && /^[季年月日周天期次]/.test(titlePart.replace(/^\s+/, ''))) {
-        return title;
+        return cleaned;
     }
 
     var suffix = (originalSuffix && Config.preserveSuffixes.indexOf(originalSuffix) >= 0) ?
@@ -644,7 +713,7 @@ function processTitle(title) {
   * 修复注释过长造成的Rhino截断执行
   * 优化步骤0逻辑策略，修复回溯问题
   * 修复索引字符串异常，使用charAt(i)
-  
+
 - [v2.8.6] 第三十五次修改 - 优化代码
 
   * 新增 assemble() 统一组装函数
@@ -652,4 +721,12 @@ function processTitle(title) {
   * 修复部分类型标题被错误解析的问题
   * 优化部分代码，修复历史部分功能失效问题
   * 修复 extraSuffixes 拼接缺少字符转义的问题
-  *
+
+- [v2.8.7] 第三十六次修改 - 优化代码
+
+  * 修复部分标题替换
+  * 修正文档注释示例
+  * 标点清理范围收窄
+  * 恢复部分逻辑判断
+  * 步骤5改用统一组装
+  * 
