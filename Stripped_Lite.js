@@ -16,11 +16,21 @@
         if (baseSuffixes.indexOf(sch) < 0 && extraSuffixes.indexOf(sch) < 0) extraSuffixes += schEscaped;
     }
     var allSuffixes = baseSuffixes + extraSuffixes;
+    var timeUnitsBase = '季年月日周天期';
+    var timeUnits = '';
+    for (var ti = 0; ti < timeUnitsBase.length; ti++) {
+        var tch = timeUnitsBase.charAt(ti);
+        if (allSuffixes.indexOf(tch) < 0) timeUnits += tch;
+    }
     var Regex = {
         patterns: {
             chapter: new RegExp('^第(\\d+|[零〇一二三四五六七八九十百千两万壹贰叁肆伍陆柒捌玖拾佰仟萬貳參陸]+)([' + allSuffixes + ']?)(.*)'),
             digitalChapterWithSuffix: new RegExp('^(\\d+)([' + allSuffixes + '])(.*)'),
             digitalChapter: /^(\d+)\s*(.*)/,
+            digitalTimeUnit: timeUnits ? new RegExp('^\\d+[' + timeUnits + ']') : null,
+            chinesePunctuation: /^[：、；？！。…]/,
+            leadingPunctuations: new RegExp('^[\\s' + escaped + ']+'),
+            trailingPunctuations: new RegExp('[\\s' + escaped + ']+$'),
             allPunctuations: new RegExp('[' + escaped + ']', 'g')
         }
     };
@@ -30,12 +40,10 @@
         '!': '！',
         '?': '？',
         ',': '，',
-        ';': '；',
-        '(': '（',
-        ')': '）'
+        ';': '；'
     };
 
-    const NumberConverter = {
+    var NumberConverter = {
         map: {
             '零': 0,
             '〇': 0,
@@ -91,17 +99,20 @@
     };
 
     function assemble(prefix, suffix, titlePart) {
-        var cleanPart = titlePart.replace(/^\s+|\s+$/g, '');
+        var hadSpace = /^\s/.test(titlePart);
+        var cleanPart = titlePart
+            .replace(Regex.patterns.leadingPunctuations, '')
+            .replace(Regex.patterns.trailingPunctuations, '');
         if (!cleanPart) return prefix + suffix;
-        var firstChar = titlePart.charAt(0);
-        if (firstChar === ' ' || firstChar === '\u3000' || firstChar === '') {
-            return prefix + suffix + ' ' + cleanPart;
-        } else if (halfToFull[firstChar]) {
-            return prefix + suffix + halfToFull[firstChar] + titlePart.slice(1).replace(/^\s+|\s+$/g, '');
-        } else if (/[\u4e00-\u9fff\w]/.test(firstChar)) {
+        var firstChar = cleanPart.charAt(0);
+        if (halfToFull[firstChar]) {
+            return prefix + suffix + halfToFull[firstChar] + cleanPart.slice(1).replace(/^\s+/, '');
+        } else if (Regex.patterns.chinesePunctuation.test(firstChar)) {
+            return prefix + suffix + cleanPart;
+        } else if (hadSpace || /[\u4e00-\u9fff\w]/.test(firstChar)) {
             return prefix + suffix + ' ' + cleanPart;
         } else {
-            return prefix + suffix + firstChar + titlePart.slice(1).replace(/^\s+|\s+$/g, '');
+            return prefix + suffix + cleanPart;
         }
     }
 
@@ -117,10 +128,11 @@
 
         if (/^\d+\.\d/.test(title)) {
             var stripped = title.replace(/^[\d.]+/, '').replace(/^\s+|\s+$/g, '');
-            if (stripped) return stripped.replace(Regex.patterns.allPunctuations, '');
+
+            return stripped ? stripped.replace(Regex.patterns.allPunctuations, '') : title;
         }
 
-        title = title.replace(Regex.patterns.allPunctuations, '');
+        var cleaned = title.replace(Regex.patterns.allPunctuations, '');
 
         var suffixMatch = title.match(Regex.patterns.digitalChapterWithSuffix);
         if (suffixMatch) {
@@ -132,26 +144,25 @@
             return assemble('第' + sNum, sSuffix, sTitlePart);
         }
 
+        if (Regex.patterns.digitalTimeUnit && Regex.patterns.digitalTimeUnit.test(title)) {
+            return cleaned;
+        }
         var digitalMatch = title.match(Regex.patterns.digitalChapter);
         if (digitalMatch) {
-            var num = digitalMatch[1];
-            var cleanedContent = digitalMatch[2].replace(/^\s+|\s+$/g, '');
-            return cleanedContent ?
-                '第' + num + Config.defaultSuffix + ' ' + cleanedContent :
-                '第' + num + Config.defaultSuffix;
+            return assemble('第' + digitalMatch[1], Config.defaultSuffix, digitalMatch[2]);
         }
 
-        if (title.charAt(0) !== '第') return title;
+        if (title.charAt(0) !== '第') return cleaned;
 
         var match = title.match(Regex.patterns.chapter);
-        if (!match) return title;
+        if (!match) return cleaned;
 
         var chineseNum = match[1];
         var originalSuffix = match[2];
         var titlePart = match[3] || '';
 
         if (!originalSuffix && /^[季年月日周天期次]/.test(titlePart.replace(/^\s+/, ''))) {
-            return title;
+            return cleaned;
         }
 
         var suffix = (originalSuffix && Config.preserveSuffixes.indexOf(originalSuffix) >= 0) ?
