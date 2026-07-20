@@ -729,4 +729,10 @@ function processTitle(title) {
   * 新增 digitalTimeUnit 日期护栏
   * 步骤5 改用 assemble() 统一组装
   * 恢复 chinesePunctuation 部分判断
-  * 
+- [v3.0.0] 第三十七次修改 - 优化代码
+  
+  * pattern 字段补全括号与标点入口
+  * 修复零值转换输出「第序章」的问题
+  * 统一时间词字符类到 timeUnits 一处
+  * 步骤2 剥离前缀后继续走后续流程
+  * 合并数字标题的两条分支，并统一后缀解析
