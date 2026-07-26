@@ -135,7 +135,7 @@
         });
         title = title.replace(/ {2,}/g, ' ').replace(/^ +| +$/g, '');
 
-        if (/^\d+\.\d/.test(title)) {
+        if (/^\d+\./.test(title)) {
             var stripped = title.replace(/^[\d.]+/, '').replace(/^\s+|\s+$/g, '');
 
             if (!stripped) return title;
